@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 from PIL import Image
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 
 # Utility Functions
 def generate_barcode():
@@ -37,10 +40,10 @@ def scan_barcode(image):
 
 # Main Function
 def main():
-    st.set_page_config(page_title="Cinta Beauty ERP", layout="wide")
+    st.set_page_config(page_title="🌐Verse ERP", layout="wide")
     
     # Sidebar Navigation
-    st.sidebar.title("Cinta Beauty ERP")
+    st.sidebar.title("🌐Verse ERP")
     
     menu = {
         "Home": home,
@@ -60,14 +63,15 @@ def main():
 
 # Home Page
 def home():
-    st.title("Welcome to Cinta Beauty ERP")
+    st.title("🌐Verse")
+    st.title("Welcome to the Verse!")
     st.write("Your all-in-one solution for managing production, inventory, sales, and more.")
     
     # Display key metrics
     st.subheader("Key Metrics")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Total Sales", "$10,000")
+        st.metric("Total Sales", "Kes 1M")
     with col2:
         st.metric("Inventory Levels", "1,200 Items")
     with col3:
@@ -486,6 +490,33 @@ def analytics_reporting():
             top_products = df["Product Name"].value_counts().reset_index()
             top_products.columns = ["Product Name", "Units Sold"]
             st.bar_chart(top_products.set_index("Product Name"))
+            
+            # Sales Predictions
+            st.subheader("Sales Predictions")
+            st.write("Predict future sales using linear regression.")
+            
+            # Prepare data for prediction
+            df["Sale Date"] = pd.to_datetime(df["Sale Date"])
+            df["Days"] = (df["Sale Date"] - df["Sale Date"].min()).dt.days
+            
+            X = df[["Days"]]
+            y = df["Total Price"]
+            
+            # Train-test split
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            
+            # Train linear regression model
+            model = LinearRegression()
+            model.fit(X_train, y_train)
+            
+            # Predict future sales
+            future_days = st.number_input("Enter number of days to predict:", min_value=1, value=30)
+            future_X = np.array(range(df["Days"].max() + 1, df["Days"].max() + 1 + future_days)).reshape(-1, 1)
+            future_y = model.predict(future_X)
+            
+            # Display predictions
+            st.write(f"Predicted sales for the next {future_days} days:")
+            st.line_chart(pd.DataFrame({"Days": future_X.flatten(), "Predicted Sales": future_y}).set_index("Days"))
     
     elif submenu == "Inventory Analytics":
         st.subheader("Inventory Analytics")
@@ -513,9 +544,9 @@ def analytics_reporting():
             st.subheader("Revenue vs Expenses")
             revenue = df[df["Type"] == "Revenue"]["Amount"].sum()
             expenses = df[df["Type"] == "Expense"]["Amount"].sum()
-            st.write(f"Total Revenue: ${revenue:,.2f}")
-            st.write(f"Total Expenses: ${expenses:,.2f}")
-            st.write(f"Net Profit: ${revenue - expenses:,.2f}")
+            st.write(f"Total Revenue: Kes{revenue:,.2f}")
+            st.write(f"Total Expenses: Kes{expenses:,.2f}")
+            st.write(f"Net Profit: Kes{revenue - expenses:,.2f}")
 
 if __name__ == "__main__":
     main()
