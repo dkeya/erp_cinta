@@ -7,3 +7,4 @@ geopandas
 plotly
 openpyxl
 opencv-python-headless
+scikit-learn
