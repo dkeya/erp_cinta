@@ -38,6 +38,60 @@ def scan_barcode(image):
     data, _, _ = detector.detectAndDecode(image_cv)
     return data if data else None
 
+# Function to get product of the week
+def get_product_of_the_week():
+    # Load sales data
+    sales_file = "data/sales.csv"
+    df = load_from_csv(sales_file)
+    
+    if df.empty:
+        return None, None
+    
+    # Find the best-selling product
+    best_product = df["Product Name"].value_counts().idxmax()
+    
+    # Load inventory data to get the product image
+    inventory_file = "data/inventory.csv"
+    inventory_df = load_from_csv(inventory_file)
+    
+    if inventory_df.empty:
+        return best_product, None
+    
+    # Get the product image (assuming the image filename is stored in the inventory data)
+    product_row = inventory_df[inventory_df["Product Name"] == best_product]
+    if not product_row.empty:
+        product_image = product_row.iloc[0]["Image"]  # Assuming "Image" column contains the filename
+        return best_product, product_image
+    else:
+        return best_product, None
+
+# Function to get seller of the week
+def get_seller_of_the_week():
+    # Load sales data
+    sales_file = "data/sales.csv"
+    df = load_from_csv(sales_file)
+    
+    if df.empty:
+        return None, None
+    
+    # Find the best-performing seller
+    best_seller = df["Customer Name"].value_counts().idxmax()
+    
+    # Load seller data to get the seller's photo (assuming a "sellers.csv" file exists)
+    sellers_file = "data/sellers.csv"
+    sellers_df = load_from_csv(sellers_file)
+    
+    if sellers_df.empty:
+        return best_seller, None
+    
+    # Get the seller's photo (assuming "Photo" column contains the filename)
+    seller_row = sellers_df[sellers_df["Customer Name"] == best_seller]
+    if not seller_row.empty:
+        seller_photo = seller_row.iloc[0]["Photo"]
+        return best_seller, seller_photo
+    else:
+        return best_seller, None
+
 # Main Function
 def main():
     st.set_page_config(page_title="🌐Verse ERP", layout="wide")
@@ -56,10 +110,107 @@ def main():
         "Analytics & Reporting": analytics_reporting,
     }
     
-    choice = st.sidebar.radio("Select Module", list(menu.keys()))
+    choice = st.sidebar.radio("Select Module", list(menu.keys()), key="main_menu")
+    
+    # Initialize submenu variable
+    submenu = None
+    
+    # Display submenus for the selected module
+    if choice in ["Production Management", "Inventory Management", "Point of Sale (POS)", "Sales & Marketing", "Personnel Management", "Financial Management", "Analytics & Reporting"]:
+        if choice == "Production Management":
+            submenu = st.sidebar.radio(
+                "Select Submenu",
+                ["Production Tracking", "Workflow Management", "Product Formulations"],
+                key="production_submenu"
+            )
+        elif choice == "Inventory Management":
+            submenu = st.sidebar.radio(
+                "Select Submenu",
+                ["Stock Levels", "Reorder Alerts", "Barcode Management"],
+                key="inventory_submenu"
+            )
+        elif choice == "Point of Sale (POS)":
+            submenu = st.sidebar.radio(
+                "Select Submenu",
+                ["Process Sale", "View Sales History"],
+                key="pos_submenu"
+            )
+        elif choice == "Sales & Marketing":
+            submenu = st.sidebar.radio(
+                "Select Submenu",
+                ["Sales Performance", "Customer Insights", "Campaign Management"],
+                key="sales_submenu"
+            )
+        elif choice == "Personnel Management":
+            submenu = st.sidebar.radio(
+                "Select Submenu",
+                ["Employee Records", "Payroll Processing", "Attendance Tracking"],
+                key="personnel_submenu"
+            )
+        elif choice == "Financial Management":
+            submenu = st.sidebar.radio(
+                "Select Submenu",
+                ["Revenue Tracking", "Expense Tracking", "Financial Reports"],
+                key="financial_submenu"
+            )
+        elif choice == "Analytics & Reporting":
+            submenu = st.sidebar.radio(
+                "Select Submenu",
+                ["Sales Analytics", "Inventory Analytics", "Financial Analytics"],
+                key="analytics_submenu"
+            )
+    
+    # Add a separator (dotted lines)
+    st.sidebar.markdown("---")
+    
+    # Product of the Week Section
+    st.sidebar.subheader("Product of the Week 🏆")
+    product_name, product_image = get_product_of_the_week()
+    
+    if product_name:
+        st.sidebar.write(f"**{product_name}** is this week's top product!")
+        if product_image:
+            # Display the product image with a playful animation (zoom-in effect)
+            st.sidebar.image(
+                product_image,
+                caption=product_name,
+                use_column_width=True,
+                output_format="auto",
+                width=200,
+            )
+        else:
+            st.sidebar.write("No image available for this product.")
+    else:
+        st.sidebar.write("No sales data available to determine the product of the week.")
+    
+    # Add another separator
+    st.sidebar.markdown("---")
+    
+    # Seller of the Week Section
+    st.sidebar.subheader("Seller of the Week 🌟")
+    seller_name, seller_photo = get_seller_of_the_week()
+    
+    if seller_name:
+        st.sidebar.write(f"**{seller_name}** is this week's top seller!")
+        if seller_photo:
+            # Display the seller's photo with a moving effect (fade-in)
+            st.sidebar.image(
+                seller_photo,
+                caption=f"Congratulations, {seller_name}! 🎉",
+                use_column_width=True,
+                output_format="auto",
+                width=200,
+            )
+        else:
+            st.sidebar.write("No photo available for this seller.")
+    else:
+        st.sidebar.write("No sales data available to determine the seller of the week.")
     
     # Call the selected function
-    menu[choice]()
+    if submenu:
+        menu[choice](submenu)  # Pass the submenu selection to the module function
+    else:
+        menu[choice]()  # Call the module function without submenu
 
 # Home Page
 def home():
@@ -87,14 +238,8 @@ def home():
     st.write("- [Analytics & Reporting](#analytics-reporting)")
 
 # Production Management Module
-def production_management():
+def production_management(submenu=None):
     st.title("Production Management")
-    
-    # Submenus
-    submenu = st.sidebar.radio(
-        "Select Submenu",
-        ["Production Tracking", "Workflow Management", "Product Formulations"]
-    )
     
     if submenu == "Production Tracking":
         st.subheader("Production Tracking")
@@ -152,14 +297,8 @@ def production_management():
         # Add product formulations functionality here
 
 # Inventory Management Module
-def inventory_management():
+def inventory_management(submenu=None):
     st.title("Inventory Management")
-    
-    # Submenus
-    submenu = st.sidebar.radio(
-        "Select Submenu",
-        ["Stock Levels", "Reorder Alerts", "Barcode Management"]
-    )
     
     if submenu == "Stock Levels":
         st.subheader("Stock Levels")
@@ -235,15 +374,9 @@ def inventory_management():
                 st.error("No barcode detected.")
 
 # Point of Sale (POS) Module
-def pos_module():
+def pos_module(submenu=None):
     st.title("Point of Sale (POS)")
     st.write("Process transactions and manage sales.")
-    
-    # Submenus
-    submenu = st.sidebar.radio(
-        "Select Submenu",
-        ["Process Sale", "View Sales History"]
-    )
     
     if submenu == "Process Sale":
         st.subheader("Process Sale")
@@ -303,14 +436,8 @@ def pos_module():
             display_dataframe(df, "Sales Transactions")
 
 # Sales & Marketing Module
-def sales_marketing():
+def sales_marketing(submenu=None):
     st.title("Sales & Marketing")
-    
-    # Submenus
-    submenu = st.sidebar.radio(
-        "Select Submenu",
-        ["Sales Performance", "Customer Insights", "Campaign Management"]
-    )
     
     if submenu == "Sales Performance":
         st.subheader("Sales Performance")
@@ -345,14 +472,8 @@ def sales_marketing():
         # Add campaign management functionality here
 
 # Personnel Management Module
-def personnel_management():
+def personnel_management(submenu=None):
     st.title("Personnel Management")
-    
-    # Submenus
-    submenu = st.sidebar.radio(
-        "Select Submenu",
-        ["Employee Records", "Payroll Processing", "Attendance Tracking"]
-    )
     
     if submenu == "Employee Records":
         st.subheader("Employee Records")
@@ -410,14 +531,8 @@ def personnel_management():
         # Add attendance tracking functionality here
 
 # Financial Management Module
-def financial_management():
+def financial_management(submenu=None):
     st.title("Financial Management")
-    
-    # Submenus
-    submenu = st.sidebar.radio(
-        "Select Submenu",
-        ["Revenue Tracking", "Expense Tracking", "Financial Reports"]
-    )
     
     if submenu == "Revenue Tracking":
         st.subheader("Revenue Tracking")
@@ -463,14 +578,8 @@ def financial_management():
         # Add financial reporting functionality here
 
 # Analytics & Reporting Module
-def analytics_reporting():
+def analytics_reporting(submenu=None):
     st.title("Analytics & Reporting")
-    
-    # Submenus
-    submenu = st.sidebar.radio(
-        "Select Submenu",
-        ["Sales Analytics", "Inventory Analytics", "Financial Analytics"]
-    )
     
     if submenu == "Sales Analytics":
         st.subheader("Sales Analytics")
