@@ -63,7 +63,7 @@ def main():
 
 # Home Page
 def home():
-    st.title("🌐Verse")
+    st.image("logo.png", width=150)
     st.title("Welcome to the Verse!")
     st.write("Your all-in-one solution for managing production, inventory, sales, and more.")
     
